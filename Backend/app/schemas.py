@@ -1,6 +1,15 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from typing import Optional, List, Union
 from datetime import datetime
+
+# --- Auth ---
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
 
 # --- Users ---
 class UserBase(BaseModel):
@@ -18,20 +27,23 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
-class TokenOut(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
 # --- Controls ---
 class ControlBase(BaseModel):
     name: str
     control_id_tag: str
     audit_year: int
     description: Optional[str] = None
-    control_type: str
+    control_type: str  # 'ITGC' or 'ITAC'
     category: Optional[str] = None
     frequency: Optional[str] = None
     owner_id: Optional[int] = None
+
+    @field_validator("control_type")
+    @classmethod
+    def _ctype(cls, v: str) -> str:
+        if v not in ("ITGC", "ITAC"):
+            raise ValueError("control_type must be 'ITGC' or 'ITAC'")
+        return v
 
 class ControlCreate(ControlBase):
     pass

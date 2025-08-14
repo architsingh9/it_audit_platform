@@ -13,12 +13,6 @@ from ..config import UPLOAD_DIR
 router = APIRouter(prefix="/evidence", tags=["Evidence"])
 ALLOWED_EXT = {"pdf", "doc", "docx", "xlsx", "xls", "csv", "txt", "png", "jpg", "jpeg"}
 
-def _all_evidence_requests_provided(control_id: int, db: Session) -> bool:
-    return db.query(EvidenceRequest).filter(
-        EvidenceRequest.control_id == control_id,
-        EvidenceRequest.status != "provided"
-    ).count() == 0
-
 @router.post("/upload/{request_id}", response_model=EvidenceOut, status_code=status.HTTP_201_CREATED)
 async def upload_evidence(
     request_id: int,
@@ -27,10 +21,11 @@ async def upload_evidence(
     db: Session = Depends(get_db),
     me: User = Depends(get_current_user)
 ):
-    req = db.query(EvidenceRequest).options(joinedload(EvidenceRequest.control)).filter(EvidenceRequest.id == request_id).first()
+    req = db.query(EvidenceRequest).options(joinedload(EvidenceRequest.control)).filter(
+        EvidenceRequest.id == request_id, EvidenceRequest.is_deleted == False  # noqa: E712
+    ).first()
     if not req: raise HTTPException(status_code=404, detail="Evidence Request not found")
 
-    # Clients can upload regardless of who requested; auditors too.
     ext = get_ext(file.filename)
     if not allowed_file(file.filename, ALLOWED_EXT):
         raise HTTPException(status_code=400, detail=f"File type '{ext}' not allowed")
@@ -39,10 +34,10 @@ async def upload_evidence(
     control_dir = os.path.join(UPLOAD_DIR, control_tag)
     ensure_dir(control_dir)
 
-    latest = db.query(Evidence).filter(Evidence.evidence_request_id == req.id).order_by(Evidence.version_number.desc()).first()
+    latest = db.query(Evidence).filter(Evidence.evidence_request_id == req.id, Evidence.is_deleted == False).order_by(Evidence.version_number.desc()).first()  # noqa: E712
     next_version = (latest.version_number + 1) if latest else 1
 
-    base = os.path.splitext(file.filename)[0]
+    base, _ = os.path.splitext(file.filename)
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     unique_name = f"{base}_v{next_version}_{timestamp}.{ext}"
     stored_path = os.path.join(control_dir, unique_name)
@@ -63,10 +58,10 @@ async def upload_evidence(
         description=description
     )
     db.add(ev)
+
     req.status = "provided"
     db.add(req)
 
-    # update control status if all provided (optional, left to workflow normally)
     db.commit(); db.refresh(ev)
     return ev
 
@@ -74,7 +69,7 @@ async def upload_evidence(
 def download_evidence(evidence_id: int, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     ev = db.query(Evidence).options(
         joinedload(Evidence.request).joinedload(EvidenceRequest.control)
-    ).filter(Evidence.id == evidence_id).first()
+    ).filter(Evidence.id == evidence_id, Evidence.is_deleted == False).first()  # noqa: E712
     if not ev:
         raise HTTPException(status_code=404, detail="Evidence not found")
 
@@ -96,7 +91,7 @@ def download_evidence(evidence_id: int, db: Session = Depends(get_db), me: User 
 
 @router.get("/{request_id}/list", response_model=List[EvidenceOut])
 def list_evidence(request_id: int, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
-    req = db.query(EvidenceRequest).filter(EvidenceRequest.id == request_id).first()
+    req = db.query(EvidenceRequest).filter(EvidenceRequest.id == request_id, EvidenceRequest.is_deleted == False).first()  # noqa: E712
     if not req: raise HTTPException(status_code=404, detail="Evidence Request not found")
-    items = db.query(Evidence).filter(Evidence.evidence_request_id == request_id).all()
+    items = db.query(Evidence).filter(Evidence.evidence_request_id == request_id, Evidence.is_deleted == False).all()  # noqa: E712
     return items

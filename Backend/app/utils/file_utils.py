@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional  # noqa
 
 def ensure_dir(path: str):
     os.makedirs(path, exist_ok=True)

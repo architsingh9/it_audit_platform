@@ -44,7 +44,7 @@ if control_id:
                 r = requests.post(f"{BACKEND_URL}/controls/requests", json=payload, headers=headers, timeout=30)
                 r.raise_for_status()
                 st.success("Created")
-                st.experimental_rerun()
+                st.rerun()
             except Exception as e:
                 st.error(f"Create failed: {e}")
 

@@ -2,7 +2,6 @@ from .config import STATUS
 
 S = STATUS  # alias
 
-# Valid transitions
 VALID_TRANSITIONS: dict[str, list[str]] = {
     S["NOT_STARTED"]: [S["EVIDENCE_REQUESTED"], S["TESTING_IN_PROGRESS"]],
     S["EVIDENCE_REQUESTED"]: [S["EVIDENCE_PROVIDED"], S["REVISIONS_REQUESTED"]],
@@ -13,10 +12,9 @@ VALID_TRANSITIONS: dict[str, list[str]] = {
     S["PENDING_L3_REVIEW"]: [S["PENDING_L4_RELEASE"], S["REVISIONS_REQUESTED"]],
     S["PENDING_L4_RELEASE"]: [S["APPROVED_INTERNAL"], S["REVISIONS_REQUESTED"]],
     S["APPROVED_INTERNAL"]: [S["RELEASED_TO_CLIENT"]],
-    S["REVISIONS_REQUESTED"]: [S["PENDING_L1_REVIEW"]],  # resubmit
+    S["REVISIONS_REQUESTED"]: [S["PENDING_L1_REVIEW"]],
 }
 
-# Role→action→target status
 ROLE_ACTIONS = {
     "Admin": {
         "request_approval": S["PENDING_L1_REVIEW"],
@@ -28,26 +26,10 @@ ROLE_ACTIONS = {
         "request_revisions": S["REVISIONS_REQUESTED"],
         "resubmit": S["PENDING_L1_REVIEW"],
     },
-    "Auditor_L1": {
-        "request_approval": S["PENDING_L1_REVIEW"],
-        "resubmit": S["PENDING_L1_REVIEW"],
-    },
-    "Auditor_L2": {
-        "approve": S["PENDING_L2_REVIEW"],  # approve L1
-        "reject": S["REJECTED"],
-        "request_revisions": S["REVISIONS_REQUESTED"],
-    },
-    "Auditor_L3": {
-        "approve": S["PENDING_L3_REVIEW"],
-        "reject": S["REJECTED"],
-        "request_revisions": S["REVISIONS_REQUESTED"],
-    },
-    "Auditor_L4": {
-        "approve": S["PENDING_L4_RELEASE"],
-        "reject": S["REJECTED"],
-        "request_revisions": S["REVISIONS_REQUESTED"],
-        "release_to_client": S["RELEASED_TO_CLIENT"],
-    },
+    "Auditor_L1": {"request_approval": S["PENDING_L1_REVIEW"], "resubmit": S["PENDING_L1_REVIEW"]},
+    "Auditor_L2": {"approve": S["PENDING_L2_REVIEW"], "reject": S["REJECTED"], "request_revisions": S["REVISIONS_REQUESTED"]},
+    "Auditor_L3": {"approve": S["PENDING_L3_REVIEW"], "reject": S["REJECTED"], "request_revisions": S["REVISIONS_REQUESTED"]},
+    "Auditor_L4": {"approve": S["PENDING_L4_RELEASE"], "reject": S["REJECTED"], "request_revisions": S["REVISIONS_REQUESTED"], "release_to_client": S["RELEASED_TO_CLIENT"]},
     "Client": {},
 }
 

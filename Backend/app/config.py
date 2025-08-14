@@ -1,10 +1,15 @@
 import os
 from datetime import timedelta
 
-SECRET_KEY = os.getenv("SECRET_KEY", "change_me_dev_only")
+# Fail fast if no secret is provided (prevents insecure defaults in prod)
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY is required (set it in environment or .env).")
+
 ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "120"))
 JWT_EXPIRE_DELTA = timedelta(minutes=JWT_EXPIRE_MINUTES)
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./audit.db")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/uploads")
 
@@ -33,7 +38,5 @@ ITGC_CATEGORIES = [
     "Security Monitoring",
     "Incident Management",
 ]
-ITAC_CATEGORIES = [
-    "Input Controls", "Processing Controls", "Output Controls"
-]
+ITAC_CATEGORIES = ["Input Controls", "Processing Controls", "Output Controls"]
 FREQUENCIES = ["Daily", "Weekly", "Monthly", "Quarterly", "Annually", "Ad-hoc"]

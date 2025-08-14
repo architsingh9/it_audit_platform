@@ -30,12 +30,14 @@ class Control(Base):
     progress_notes: Mapped[str | None] = mapped_column(Text, default="")
     final_report_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     released_to_client: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    evidence_requests: Mapped[list["EvidenceRequest"]] = relationship(back_populates="control", cascade="all, delete-orphan")
-    approval_requests: Mapped[list["ApprovalRequest"]] = relationship(back_populates="control_obj", cascade="all, delete-orphan")
+    # NOTE: no "delete-orphan" cascades (protect data)
+    evidence_requests: Mapped[list["EvidenceRequest"]] = relationship(back_populates="control")
+    approval_requests: Mapped[list["ApprovalRequest"]] = relationship(back_populates="control_obj")
 
 class EvidenceRequest(Base):
     __tablename__ = "evidence_requests"
@@ -50,8 +52,9 @@ class EvidenceRequest(Base):
     requested_by: Mapped["User"] = relationship(foreign_keys=[requested_by_id])
     requested_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    evidences: Mapped[list["Evidence"]] = relationship(back_populates="request", cascade="all, delete-orphan")
+    evidences: Mapped[list["Evidence"]] = relationship(back_populates="request")
 
 class Evidence(Base):
     __tablename__ = "evidence"
@@ -68,6 +71,7 @@ class Evidence(Base):
     uploaded_by: Mapped["User"] = relationship(foreign_keys=[uploaded_by_id])
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 class ApprovalRequest(Base):
     __tablename__ = "approval_requests"
@@ -86,3 +90,4 @@ class ApprovalRequest(Base):
     approval_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     comments: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_released_to_client: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)

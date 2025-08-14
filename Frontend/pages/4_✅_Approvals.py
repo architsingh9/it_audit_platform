@@ -38,7 +38,7 @@ try:
                 rr = requests.post(f"{BACKEND_URL}/approvals/{aid}/action", json=payload, headers=headers, timeout=30)
                 rr.raise_for_status()
                 st.success("Action done")
-                st.experimental_rerun()
+                st.rerun()
             except Exception as e:
                 st.error(f"Action failed: {e}")
     else:

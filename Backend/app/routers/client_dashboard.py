@@ -10,9 +10,9 @@ router = APIRouter(prefix="/client_dashboard", tags=["Client"])
 @router.get("/", response_model=List[ControlOut])
 def get_client_controls(db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     if me.role == "Client":
-        controls = db.query(Control).filter(Control.owner_id == me.id).all()
+        controls = db.query(Control).filter(Control.owner_id == me.id, Control.is_deleted == False).all()  # noqa: E712
     else:
-        controls = db.query(Control).all()
+        controls = db.query(Control).filter(Control.is_deleted == False).all()  # noqa: E712
     outs = []
     for c in controls:
         d = ControlOut.model_validate(c).model_dump()

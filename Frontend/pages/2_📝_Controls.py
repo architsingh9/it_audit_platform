@@ -45,7 +45,7 @@ with st.expander("Create new control"):
             r = requests.post(f"{BACKEND_URL}/controls", json=payload, headers=headers, timeout=30)
             r.raise_for_status()
             st.success("Control created.")
-            st.experimental_rerun()
+            st.rerun()
         except Exception as e:
             st.error(f"Create failed: {e}")
 
@@ -53,7 +53,6 @@ with st.expander("Create new control"):
 st.subheader("Control details & actions")
 cid = st.selectbox("Select control ID", [c["id"] for c in controls] if controls else [])
 if cid:
-    # get one
     r = requests.get(f"{BACKEND_URL}/controls/{cid}", headers=headers)
     d = r.json()
     st.json(d)
@@ -77,7 +76,7 @@ if cid:
                 rr = requests.put(f"{BACKEND_URL}/controls/{cid}", json=payload, headers=headers, timeout=30)
                 rr.raise_for_status()
                 st.success("Updated")
-                st.experimental_rerun()
+                st.rerun()
             except Exception as e:
                 st.error(f"Update failed: {e}")
 
