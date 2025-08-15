@@ -1,6 +1,6 @@
-import streamlit as st
-import requests
 import os
+import requests
+import streamlit as st
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
@@ -11,7 +11,11 @@ password = st.text_input("Password", type="password")
 
 def do_login():
     try:
-        r = requests.post(f"{BACKEND_URL}/auth/login", json={"email": email, "password": password}, timeout=15)
+        r = requests.post(
+            f"{BACKEND_URL}/auth/login",
+            json={"email": email, "password": password},
+            timeout=15,
+        )
         r.raise_for_status()
         token = r.json()["access_token"]
         st.session_state["token"] = token
