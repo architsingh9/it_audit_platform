@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Optional, List, Union
+from typing import Optional, List
 from datetime import datetime
 
 # --- Auth ---
@@ -27,8 +27,27 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
+# --- Projects ---
+class ProjectBase(BaseModel):
+    name: str
+    is_active: bool = True
+
+class ProjectCreate(ProjectBase):
+    pass
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class ProjectOut(ProjectBase):
+    id: int
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
 # --- Controls ---
 class ControlBase(BaseModel):
+    project_id: Optional[int] = None
     name: str
     control_id_tag: str
     audit_year: int
@@ -54,6 +73,8 @@ class ControlUpdate(BaseModel):
     progress_notes: Optional[str] = None
     final_report_text: Optional[str] = None
     released_to_client: Optional[bool] = None
+    category: Optional[str] = None
+    control_type: Optional[str] = None
 
 class ControlOut(ControlBase):
     id: int
@@ -126,5 +147,36 @@ class ApprovalRequestOut(BaseModel):
     approval_date: datetime
     comments: Optional[str] = None
     is_released_to_client: bool
+    class Config:
+        from_attributes = True
+
+# --- Tasks ---
+class TaskBase(BaseModel):
+    project_id: int
+    control_id: Optional[int] = None
+    description: str
+    priority: str = "Medium"
+    status: str = "Todo"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    notes: Optional[str] = None
+    assigned_to_id: Optional[int] = None
+
+class TaskCreate(TaskBase):
+    pass
+
+class TaskUpdate(BaseModel):
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    notes: Optional[str] = None
+    assigned_to_id: Optional[int] = None
+    control_id: Optional[int] = None
+
+class TaskOut(TaskBase):
+    id: int
+    created_at: datetime
     class Config:
         from_attributes = True
