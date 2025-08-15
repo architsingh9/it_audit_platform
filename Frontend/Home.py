@@ -1,4 +1,17 @@
 import streamlit as st
-st.set_page_config(page_title="IT Audit Platform", page_icon="✅", layout="wide")
-st.write("Use the sidebar to navigate. Start with **Login**.")
-st.page_link("pages/1_🔐_Login.py", label="Go to Login →", icon="🔐")
+
+# MUST be first Streamlit command in this file
+st.set_page_config(
+    page_title="Home",
+    layout="wide",
+    initial_sidebar_state="expanded",   # show sidebar on main pages
+)
+
+# If not logged in, send to Login immediately
+if "token" not in st.session_state:
+    st.switch_page("pages/1_🔐_Login.py")
+
+st.title("Home")
+
+st.write("Welcome,", st.session_state.get("email", ""))
+# ... your home content
