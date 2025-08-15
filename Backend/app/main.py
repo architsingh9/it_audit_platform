@@ -8,6 +8,15 @@ from .security import hash_password
 from .config import STATUS
 from .routers import auth, users, controls, evidence, approvals, client_dashboard
 from .routers import projects, tasks
+from fastapi import FastAPI
+from .routers import auth, controls, tasks 
+
+
+app = FastAPI(title="IT Audit Platform")
+
+app.include_router(auth.router)
+app.include_router(controls.router)
+app.include_router(tasks.router) 
 
 def seed_demo_data(db: Session):
     if db.query(User).count() == 0:

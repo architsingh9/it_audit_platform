@@ -2,50 +2,68 @@ import os
 import requests
 import streamlit as st
 
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://web:8000")
 
-def get_headers():
-    tok = st.session_state.get("token")
-    return {"Authorization": f"Bearer {tok}"} if tok else {}
-
-def api_get(path, **kwargs):
-    r = requests.get(f"{BACKEND_URL}{path}", headers=get_headers(), timeout=30, **kwargs)
-    r.raise_for_status()
-    return r.json()
-
-def api_post(path, json=None, data=None, files=None, **kwargs):
-    r = requests.post(f"{BACKEND_URL}{path}", headers=get_headers(), json=json, data=data, files=files, timeout=60, **kwargs)
-    r.raise_for_status()
-    return r.json() if r.content else {}
-
-def api_put(path, json=None, **kwargs):
-    r = requests.put(f"{BACKEND_URL}{path}", headers=get_headers(), json=json, timeout=60, **kwargs)
-    r.raise_for_status()
-    return r.json()
-
-def require_login():
+# ---- session helpers ----
+def require_auth():
     if "token" not in st.session_state:
-        st.warning("Please log in first.")
-        st.stop()
+        st.switch_page("pages/1__🔐_Login.py")  # hard redirect
+    return st.session_state.get("token")
 
-def project_picker(sidebar_placeholder):
-    try:
-        projects = api_get("/projects")
-    except Exception as e:
-        sidebar_placeholder.error(f"Failed to load projects: {e}")
-        return None, []
-    options = []
-    for p in projects:
-        dot = "🟢" if p["is_active"] else "🔴"
-        options.append(f'{dot}  {p["name"]}  (#{p["id"]})')
-    current = st.session_state.get("current_project_display")
-    choice = sidebar_placeholder.selectbox("Projects", options, index=options.index(current) if current in options else 0)
-    st.session_state["current_project_display"] = choice
-    project_id = int(choice.split("(#")[-1].rstrip(")"))
-    return project_id, projects
+def api_get(path, params=None):
+    token = st.session_state.get("token")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    r = requests.get(f"{BACKEND_URL}{path}", params=params or {}, headers=headers, timeout=15)
+    r.raise_for_status()
+    return r.json()
 
-def secondary_nav():
-    # “second left bar” inside main area
-    with st.container():
-        col_nav, col_main = st.columns([0.20, 0.80], gap="small")
-    return col_nav, col_main
+# ---- primary sidebar: Home + Projects ----
+def render_primary_sidebar():
+    with st.sidebar:
+        st.header("Home")
+        st.page_link("Home.py", label="🏠 Home")
+
+        st.markdown("---")
+        st.subheader("Projects")
+
+        # preload projects
+        if "projects_cache" not in st.session_state:
+            try:
+                st.session_state["projects_cache"] = api_get("/projects")
+            except Exception:
+                st.session_state["projects_cache"] = []
+
+        projs = st.session_state["projects_cache"]
+        labels = [f'{"🟢" if p["is_active"] else "🔴"} {p["name"]} (#{p["id"]})' for p in projs]
+        ids = [p["id"] for p in projs]
+
+        current = st.session_state.get("selected_project_id")
+        default_index = ids.index(current) if current in ids else (0 if ids else None)
+
+        sel = st.selectbox("Select project", options=ids, index=default_index if default_index is not None else None,
+                           format_func=lambda pid: labels[ids.index(pid)] if pid in ids else "—")
+        if sel:
+            st.session_state["selected_project_id"] = sel
+
+        st.toggle("Compact project bar", key="compact_project_bar", value=True, help="Toggle secondary bar width")
+
+# ---- secondary bar: appears inside pages when a project is selected ----
+def secondary_bar_and_main(title: str):
+    selected = st.session_state.get("selected_project_id")
+    if not selected:
+        # single full-width column if no project yet
+        return st.container()
+
+    # width ratio
+    narrow = 0.18 if not st.session_state.get("compact_project_bar", True) else 0.13
+    left, right = st.columns([narrow, 1 - narrow], gap="small")
+
+    with left:
+        st.markdown("### Navigate")
+        st.page_link("pages/2__📋_Tasks.py", label="📋 Tasks")
+        st.page_link("pages/3__📝_Controls.py", label="📝 Controls")
+        st.page_link("pages/5__📊_Client_Dashboard.py", label="📊 Client Dashboard")
+
+    with right:
+        st.markdown(f"## {title}")
+        return right
